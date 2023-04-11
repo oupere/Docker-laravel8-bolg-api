@@ -1,0 +1,64 @@
+version: "3"
+services:
+  #PHP Service
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ifnti_blog_app
+    container_name: blogapp
+    restart: unless-stopped
+    tty: true
+    environment:
+      SERVICE_NAME: blog
+      SERVICE_TAGS: dev
+    volumes:
+      - ./:/var/www
+      - ./php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - app-network
+
+  #Nginx Service
+  webserver:
+    image: nginx:alpine
+    container_name: blogserver
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "82:80"
+      - "444:443"
+    volumes:
+      - ./:/var/www
+      - ./nginx/conf.d/:/etc/nginx/conf.d/
+    networks:
+      - app-network
+    depends_on: 
+      - dbBlog
+
+  #POSTRES Service
+  dbBlog:
+    image: postgres:12
+    container_name: db
+    restart: unless-stopped
+    tty: true
+    volumes:
+      - dbdata:/var/lib/postgresql/data/
+    environment:
+      POSTGRES_PASSWORD: admin
+      POSTGRES_USER: admin
+      POSTGRES_DB: blog
+    ports:
+      - "54321:5432"
+    networks:
+      - app-network
+
+
+#Docker Networks
+networks:
+  app-network:
+    driver: bridge
+#Volumes
+volumes:
+  dbdata:
+    driver: local
+    
